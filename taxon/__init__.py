@@ -8,7 +8,6 @@ from inspect import (
     isframe, iscode, isbuiltin, isroutine,
     ismethoddescriptor, isdatadescriptor, isgetsetdescriptor,
     ismemberdescriptor)
-
 try:
     from inspect import (
         isgeneratorfunction, isgenerator, isabstract)
@@ -21,19 +20,19 @@ except ImportError:
 
 
 def classify(obj):
-    """Classifies returns a tuple of names of type, module, class, and the object. 
+    """Classifies object as a tuple of type, module, class, object itself.
 
     >>> classify(int)
-    ('class', '__builtin__', 'int', None)
+    ('class', '__builtin__', 'int', 'int')
     >>> classify(int.__add__)
-    ('routine', '__builtin__', 'int', '__add__')
-    >>> import os
-    >>> classify(os)
-    ('module', 'os', None, None)
-    >>> classify(os.path)
-    ('module', ..., None, None)
-    >>> classify(os.path.isdir)
-    ('function', ..., None, 'isdir')
+    ('methoddescriptor', '__builtin__', 'int', '__add__')
+    >>> import json
+    >>> classify(json)
+    ('module', 'json', 'module', 'json')
+    >>> classify(json.dumps)
+    ('function', 'json', 'function', 'dumps')
+    >>> classify(1)
+    ('instance', '__builtin__', 'int', '0x...')
 
     """
 
@@ -45,14 +44,13 @@ def classify(obj):
     if ismodule(obj):
         typename = 'module'
         modulename = obj.__name__
+        classname = type(obj).__name__
+        objname = modulename
     elif isclass(obj):
         typename = 'class'
         modulename = obj.__module__
         classname = obj.__name__
-    elif isabstract(obj):
-        typename = 'abstract'
-        modulename = obj.__module__
-        classname = obj.__name__
+        objname = classname
     elif ismethod(obj):
         typename = 'method'
         cls = obj.im_class
@@ -62,56 +60,28 @@ def classify(obj):
     elif isfunction(obj):
         typename = 'function'
         modulename = obj.__module__
+        classname = type(obj).__name__
         objname = obj.__name__
-    elif isgeneratorfunction(obj):
-        typename = 'generatorfunction'
-        modulename = obj.__module__
-        objname = obj.__name__
-    elif isgenerator(obj):
-        typename = 'generatorfunction'
-        code = obj.gi_code
-        objname = code.co_name
-    elif istraceback(obj):
-        typename = 'traceback'
-        frame = obj.tb_frame
-        code = frame.f_code
-        objname = code.co_name
-    elif isframe(obj):
-        typename = 'frame'
-        code = frame.f_code
-        objname = code.co_name
     elif isbuiltin(obj):
-        # should never reach here
         typename = 'builtin'
-        modulename = obj.__module__
         instance = getattr(obj, '__self__', None)
         if instance:
             cls = instance.__class__
             modulename = cls.__module__
             classname = cls.__name__
-        objname = obj.__name__
-    elif isroutine(obj):
-        # should never reach here
-        typename = 'routine'
-        instance = getattr(obj, '__self__', None)
-        cls = None
-        if instance:
-            cls = instance.__class__
         else:
-            cls = getattr(obj, '__objclass__', None)
-        if cls:
-            modulename = cls.__module__
-            classname = cls.__name__
+            modulename = obj.__module__
+            classname = type(obj).__name__
         objname = obj.__name__
     elif ismethoddescriptor(obj):
         typename = 'methoddescriptor'
-        cls = obj.__get__.im_class
+        cls = obj.__objclass__
         modulename = cls.__module__
         classname = cls.__name__
         objname = getattr(obj, '__name__', '')
     elif isdatadescriptor(obj):
         typename = 'datadescriptor'
-        cls = obj.__set__.im_class
+        cls = obj.__objclass__
         modulename = cls.__module__
         classname = cls.__name__
         objname = getattr(obj, '__name__', '')
@@ -122,15 +92,34 @@ def classify(obj):
         classname = cls.__name__
         objname = getattr(obj, '__name__', '')
     elif ismemberdescriptor(obj):
-        # umm, I don't figure how to treat this...
+        # umm, I cannot figure how to treat this...
         typename = 'memberdescriptor'
         cls = getattr(obj, 'im_class')
         if cls:
             modulename = cls.__module__
             classname = cls.__name__
+        else:
+            classname = type(obj).__name__
         objname = getattr(obj, '__name__', '')
     else:
-        typename = 'undefined'
+        # object can be an instance
+        cls = getattr(obj, '__class__', None)
+        if cls:
+            typename = 'instance'
+            classname = cls.__name__
+            modulename = cls.__module__
+        else:
+            typename = 'undefined'
+    # fallback stuff
+    if objname is None:
+        if obj is None:
+            objname = 'None'
+        elif obj is True:
+            objname = 'True'
+        elif obj is False:
+            objname = 'False'
+        else:
+            objname = hex(id(obj))
     return (typename, modulename, classname, objname)
             
     

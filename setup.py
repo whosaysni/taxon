@@ -8,7 +8,7 @@ except ImportError:
     pass
 
 
-version = '0.1.0'
+version = '0.2.1'
 
 setup(
     name="taxon",
@@ -16,13 +16,13 @@ setup(
     description=("Provides simple object taxonomy."),
     classifiers=["Development Status :: 4 - Beta",
                  "Intended Audience :: Developers",
-                 "License :: OSI Approved :: BSD License",
+                 "License :: Public Domain",
                  "Programming Language :: Python",
                  "Topic :: Software Development :: Libraries :: Python Modules"],
     author="Yasushi Masuda",
     author_email="whosaysni at gmail.com",
-    url="",
-    license="BSD",
+    url="http://github.com/whosaysni/taxon/",
+    license="Public Domain",
     zip_safe=True,
     packages=["taxon"],
     test_suite = 'tests.suite',
